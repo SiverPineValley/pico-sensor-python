@@ -1,5 +1,5 @@
 from machine import Pin, UART
-#from micropyGPS import MicropyGPS
+from micropyGPS import MicropyGPS
 from utility import Utility
 from at import AT
 import wifi
@@ -15,7 +15,7 @@ import binascii
 async def main():
     #ssid = "csg"
     #password = None
-    #TIMEZONE = 9
+    TIMEZONE = 9
     speed = "0"
     ip = ""
     sid = ""
@@ -27,8 +27,8 @@ async def main():
     wlan.active(True)
 
     # GPS 모듈 초기화 - 미사용
-    #gps_module = UART(1, baudrate=9600, tx=Pin(4), rx=Pin(5))
-    #my_gps = MicropyGPS(TIMEZONE)
+    gps_module = UART(1, baudrate=9600, tx=Pin(4), rx=Pin(5))
+    my_gps = MicropyGPS(TIMEZONE)
 
     # utility 클래스 초기화
     utility = Utility()
@@ -56,26 +56,19 @@ async def main():
 
     while True or KeyboardInterrupt:   
         # GPS 데이터 가져오기
-        #gpsInfo = at.getGpsInfo().split(",")
-        gpsInfo = uasyncio.run(at.getGpsInfo()).split(",")
-        #length = gps_module.any()
-        #if length>0:
-        #    b = gps_module.read(length)
-        #    for x in b:
-        #        msg = my_gps.update(chr(x))
+        #gpsInfo = uasyncio.run(at.getGpsInfo()).split(",")
+        length = gps_module.any()
+        if length>0:
+           b = gps_module.read(length)
+           for x in b:
+               msg = my_gps.update(chr(x))
         
-        #latitude = utility.convert(my_gps.latitude)
-        #longitude = utility.convert(my_gps.longitude)
+        latitude = utility.convert(my_gps.latitude) or ""
+        longitude = utility.convert(my_gps.longitude) or ""
         
         wifi_scanned = uasyncio.run(wifi.scan(wlan))
 
         try:
-            latitude = ""
-            longitude = ""
-            if len(gpsInfo) >= 5:
-                latitude = gpsInfo[3]
-                longitude = gpsInfo[4]
-      
             if (latitude == "" and longitude == ""):
                 data = {
                     "sid": sid,
@@ -104,7 +97,6 @@ async def main():
             }
             jsonData = json.dumps(data)
             print(jsonData)
-            #client.publish(topic, msg=str(jsonData))
             sleep(10)
         except Exception as e:
             print(e)
