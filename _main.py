@@ -21,6 +21,8 @@ async def main():
     sid = ""
     wifi_scanned = ""
     gpsInfo = []
+    host = "http://34.64.254.213:1323"
+    uri = "/api/v1/trm/log/gps"
 
     # WLAN 초기화
     wlan = network.WLAN(network.STA_IF)
@@ -69,17 +71,10 @@ async def main():
         wifi_scanned = uasyncio.run(wifi.scan(wlan))
 
         try:
+            data = 'sid={sid}&lat={lat}&lon={lon}&speed={speed}&wifiLoc={wifiLoc}&battery={battery}'
             if (latitude == "" and longitude == ""):
-                data = {
-                    "sid": sid,
-                    "lat": latitude,
-                    "lon": longitude,
-                    "speed": speed,
-                    "wifiLoc": [wifi_scanned],
-                    "battery": 100
-                }
-                jsonData = json.dumps(data)
-                print(jsonData)
+                data = data.format(sid=sid, lat=latitude, lon=longitude, speed=speed, wifiLoc=wifi_scanned, battery=100)
+                at.http_post(host, uri, data)
                 #client.publish(topic, msg=str(jsonData))
                 sleep(10)
                 continue
@@ -87,16 +82,8 @@ async def main():
             if len(gpsInfo) >= 7:
                 speed = gpsInfo[6]
             
-            data = {
-                "sid": sid,
-                "lat": latitude,
-                "lon": longitude,
-                "speed": speed,
-                "wifiLoc": [wifi_scanned],
-                "battery": 100
-            }
-            jsonData = json.dumps(data)
-            print(jsonData)
+            data = data.format(sid=sid, lat=latitude, lon=longitude, speed=speed, wifiLoc=wifi_scanned, battery=100)
+            at.http_post(host, uri, data)
             sleep(10)
         except Exception as e:
             print(e)

@@ -19,9 +19,10 @@ class AT():
     def set_network(self):
         print("Setting to CAT-M mode:\n")
         self.send_at("AT+CFUN=0", "OK")
-        self.send_at("AT+CNMP=38", "OK")
-        self.send_at("AT+CMNB=1", "OK")
-        self.send_at("AT+CFUN=1", "OK")
+        self.send_at("AT+CMEE=2;+CNMP=38;+CMNB=1;+CFUN=1", "OK")
+        #self.send_at("AT+CNMP=38", "OK")
+        #self.send_at("AT+CMNB=1", "OK")
+        #self.send_at("AT+CFUN=1", "OK")
         utime.sleep(5)
 
     def check_network(self):
@@ -56,10 +57,9 @@ class AT():
 
 
     # Set HTTP header content
-    def set_http_content(self, contentType: str="application/json"):
+    def set_http_content(self, contentType: str="application/x-www-form-urlencoded"):
         self.send_at('AT+SHCHEAD', 'OK')
-        contentTypeCmd = 'AT+SHAHEAD=\"Content-Type\",\"%s\"' % (contentType)
-        self.send_at(contentTypeCmd, 'OK')
+        self.send_at('AT+SHAHEAD=\"Content-Type\",\"application/x-www-form-urlencoded\"', 'OK')
         self.send_at('AT+SHAHEAD=\"User-Agent\",\"curl/7.47.0\"', 'OK')
         self.send_at('AT+SHAHEAD=\"Cache-control\",\"no-cache\"', 'OK')
         self.send_at('AT+SHAHEAD=\"Connection\",\"keep-alive\"', 'OK')
@@ -68,9 +68,9 @@ class AT():
 
     # HTTP GET TEST
     def http_get(self, host: str, uri: str):
-        self.send_at('AT+SHDISC', 'OK')
         self.send_at('AT+SHCONF="URL",\"'+host+'\"', 'OK')
         self.set_http_length(1024, 350)
+        #self.send_at('AT+CGACT=1', 'OK')
         self.send_at('AT+SHCONN', 'OK', 3000)
         if self.send_at('AT+SHSTATE?', '1'):
             self.set_http_content()
@@ -91,24 +91,22 @@ class AT():
 
     # HTTP POST TEST
     def http_post(self, host: str, uri: str, body: str):
-        bodySize = len(body)
-        
-        self.send_at('AT+SHDISC', 'OK')
         self.send_at('AT+SHCONF="URL",\"' + host + '\"', 'OK')
-        self.set_http_length(bodySize, 350)
+        self.set_http_length(1024, 350)
+        #self.send_at('AT+CGACT=1', 'OK')
         self.send_at('AT+SHCONN', 'OK', 3000)
         if self.send_at('AT+SHSTATE?', '1'):
             self.set_http_content()
             self.send_at('AT+SHCPARA', 'OK')
-            if self.send_at('AT+SHBOD=0,10000', '>', 1000) :
+            if self.send_at('AT+SHBOD=%d,10000' % len(body), '>', 1000) :
                 self.send_at(body, 'OK')
-                resp = str(self.send_at_wait_resp('AT+SHREQ=\"/'+ uri +'\",3','OK', 8000))
+                resp = str(self.send_at_wait_resp('AT+SHREQ=\"'+ uri +'\",3','OK', 8000))
                 try:
                     get_pack = int(resp[resp.rfind(',')+1:-5])
                     print(get_pack)
                     if get_pack > 0:
-                        self.send_at_wait_resp('AT+SHREAD=0,' + str(get_pack), 'OK', 3000)
-                        self.send_at('AT+SHDISC', 'OK')
+                        send_at_wait_resp('AT+SHREAD=0,' + str(get_pack), 'OK', 3000)
+                        send_at('AT+SHDISC', 'OK')
                     else:
                         print("HTTP Post failed!\n")
                 except ValueError:
