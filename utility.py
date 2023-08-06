@@ -11,7 +11,7 @@ class Utility():
         if (parts[2] == 'W'):
             data = -data
 
-        data = '{0:.1f}'.format(data) # to 6 decimal places
+        data = '{0:.6f}'.format(data) # to 6 decimal places
         return str(data)
 
     def getUniqueDeivcieId(self) -> str:

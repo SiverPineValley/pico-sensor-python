@@ -21,7 +21,7 @@ async def main():
     sid = ""
     wifi_scanned = ""
     gpsInfo = []
-    host = "http://34.64.254.213:1323"
+    host = "http://34.64.45.98:1323"
     uri = "/api/v1/trm/log/gps"
 
     # WLAN 초기화
@@ -68,7 +68,8 @@ async def main():
         latitude = utility.convert(my_gps.latitude) or ""
         longitude = utility.convert(my_gps.longitude) or ""
         
-        wifi_scanned = uasyncio.run(wifi.scan(wlan))
+        wifi_scanned = uasyncio.run(wifi.scan(wlan)) or ""
+        speed = "0"
 
         try:
             data = 'sid={sid}&lat={lat}&lon={lon}&speed={speed}&wifiLoc={wifiLoc}&battery={battery}'
@@ -79,9 +80,7 @@ async def main():
                 sleep(10)
                 continue
             
-            if len(gpsInfo) >= 7:
-                speed = gpsInfo[6]
-            
+            speed = my_gps.speed_string('kph')
             data = data.format(sid=sid, lat=latitude, lon=longitude, speed=speed, wifiLoc=wifi_scanned, battery=100)
             at.http_post(host, uri, data)
             sleep(10)
