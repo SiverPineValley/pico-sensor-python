@@ -12,16 +12,14 @@ import uasyncio
 import socket
 import binascii
 
-async def main():
-    #ssid = "csg"
-    #password = None
+async def main_job():
     TIMEZONE = 9
     speed = "0"
     ip = ""
     sid = ""
     wifi_scanned = ""
     gpsInfo = []
-    host = "http://34.64.45.98:1323"
+    host = "http://34.64.74.23:1323"
     uri = "/api/v1/trm/log/gps"
 
     # WLAN 초기화
@@ -47,20 +45,9 @@ async def main():
     #    ip = wifi.connect(wlan, ssid, password)
     #except KeyboardInterrupt:
     #    print("Wifi connection error...")
-
-    # MQTT 초기 세팅 - 미사용
-    #while True:
-    #    try:
-    #        client = mqtt.mqtt_connect(client_id, mqtt_server, mqtt_port, user, password)
-    #        break
-    #    except OSError as e:
-    #        pass
-
-    uasyncio.run(ble.scan_lock_control())
-
+    
     while True or KeyboardInterrupt:   
         # GPS 데이터 가져오기
-        #gpsInfo = uasyncio.run(at.getGpsInfo()).split(",")
         length = gps_module.any()
         if length>0:
            b = gps_module.read(length)
@@ -78,14 +65,13 @@ async def main():
             if (latitude == "" and longitude == ""):
                 data = data.format(sid=sid, lat=latitude, lon=longitude, speed=speed, wifiLoc=wifi_scanned, battery=100)
                 at.http_post(host, uri, data)
-                #client.publish(topic, msg=str(jsonData))
-                sleep(10)
+                await uasyncio.sleep_ms(10000)
                 continue
             
             speed = my_gps.speed_string('kph')
             data = data.format(sid=sid, lat=latitude, lon=longitude, speed=speed, wifiLoc=wifi_scanned, battery=100)
             at.http_post(host, uri, data)
-            sleep(10)
+            await uasyncio.sleep_ms(10000)
         except Exception as e:
             print(e)
             pass
@@ -93,6 +79,9 @@ async def main():
         except:
             print("err")
             pass
+
+async def main():
+    await uasyncio.gather(ble.scan_lock_control(), main_job())
 
 uasyncio.run(main())
 

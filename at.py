@@ -105,8 +105,8 @@ class AT():
                     get_pack = int(resp[resp.rfind(',')+1:-5])
                     print(get_pack)
                     if get_pack > 0:
-                        send_at_wait_resp('AT+SHREAD=0,' + str(get_pack), 'OK', 3000)
-                        send_at('AT+SHDISC', 'OK')
+                        self.send_at_wait_resp('AT+SHREAD=0,' + str(get_pack), 'OK', 3000)
+                        self.send_at('AT+SHDISC', 'OK')
                     else:
                         print("HTTP Post failed!\n")
                 except ValueError:
@@ -117,6 +117,8 @@ class AT():
 
         else:
             print("HTTP connection disconnected, please check and try again\n")
+            self.set_network()
+            self.ip = self.check_network()
 
     # Send AT command
     def send_at(self, cmd, back, timeout=1500):
