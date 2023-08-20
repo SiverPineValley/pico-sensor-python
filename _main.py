@@ -5,7 +5,7 @@ from at import AT
 import wifi
 import network
 from utime import sleep
-#import mqtt
+import ble
 import json
 import uasyncio
 
@@ -56,6 +56,7 @@ async def main():
     #    except OSError as e:
     #        pass
 
+    uasyncio.run(main()).run(ble.scan_lock_control())
     while True or KeyboardInterrupt:   
         # GPS 데이터 가져오기
         #gpsInfo = uasyncio.run(at.getGpsInfo()).split(",")
