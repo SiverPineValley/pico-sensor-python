@@ -12,7 +12,7 @@ import uasyncio
 import socket
 import binascii
 
-async def main_job():
+async def lte_scan():
     TIMEZONE = 9
     speed = "0"
     ip = ""
@@ -40,7 +40,7 @@ async def main_job():
     ip = at.get_ip()
     print("IP Address: " + ip)
     
-    while True or KeyboardInterrupt:   
+    while True:
         # GPS 데이터 가져오기
         length = gps_module.any()
         if length>0:
@@ -50,9 +50,10 @@ async def main_job():
         
         latitude = utility.convert(my_gps.latitude) or ""
         longitude = utility.convert(my_gps.longitude) or ""
-        
-        wifi_scanned = uasyncio.run(wifi.scan(wlan)) or ""
+               
+        wifi_scanned = await wifi.scan(wlan) or ""
         speed = "0"
+
 
         try:
             data = 'sid={sid}&lat={lat}&lon={lon}&speed={speed}&wifiLoc={wifiLoc}&battery={battery}'
@@ -61,7 +62,6 @@ async def main_job():
                 at.http_post(host, uri, data)
                 await uasyncio.sleep_ms(10000)
                 continue
-            
             speed = my_gps.speed_string('kph')
             data = data.format(sid=sid, lat=latitude, lon=longitude, speed=speed, wifiLoc=wifi_scanned, battery=100)
             at.http_post(host, uri, data)
@@ -74,11 +74,19 @@ async def main_job():
             print("err")
             pass
 
-async def main():   
+async def test():
+    print("call test")
+    while True:
+        print("scan ble")
+        await uasyncio.sleep_ms(2000)
+
+async def main():
+    #await uasyncio.gather(lte_scan(), test())
     loop = uasyncio.get_event_loop()
-    loop.create_task(ble.scan_lock_control(2000))   		# 첫 번째 코루틴을 생성하고 실행
-    loop.create_task(main_job())  							# 두 번째 코루틴을 생성하고 실행
-    loop.run_forever()  									# 루프를 계속 실행
+    #loop.create_task(ble.scan_lock_control(2000))   		# 첫 번째 코루틴을 생성하고 실행
+    loop.create_task(lte_scan())  							# 두 번째 코루틴을 생성하고 실행
+    loop.create_task(test())
+    loop.run_forever()
+    loop.close()
 
 uasyncio.run(main())
-

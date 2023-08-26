@@ -56,10 +56,10 @@ async def scan_lock_control(time_sleep=2000):
                 break
             except asyncio.TimeoutError:
                 print("Timeout discovering lock_control")
-                sleep(2)
+                uasyncio.sleep_ms(time_sleep)
             except:
                 print("Failed to connect BLE")
-                sleep(2)
+                uasyncio.sleep_ms(time_sleep)
     
         while True:
             try:
