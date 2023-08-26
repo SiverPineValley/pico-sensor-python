@@ -59,13 +59,13 @@ async def main_job():
             if (latitude == "" and longitude == ""):
                 data = data.format(sid=sid, lat=latitude, lon=longitude, speed=speed, wifiLoc=wifi_scanned, battery=100)
                 at.http_post(host, uri, data)
-                await uasyncio.sleep(10)
+                await uasyncio.sleep_ms(10000)
                 continue
             
             speed = my_gps.speed_string('kph')
             data = data.format(sid=sid, lat=latitude, lon=longitude, speed=speed, wifiLoc=wifi_scanned, battery=100)
             at.http_post(host, uri, data)
-            await uasyncio.sleep(10)
+            await uasyncio.sleep_ms(10000)
         except Exception as e:
             print(e)
             pass
@@ -76,7 +76,7 @@ async def main_job():
 
 async def main():   
     loop = uasyncio.get_event_loop()
-    loop.create_task(ble.scan_lock_control(2))   		# 첫 번째 코루틴을 생성하고 실행
+    loop.create_task(ble.scan_lock_control(2000))   		# 첫 번째 코루틴을 생성하고 실행
     loop.create_task(main_job())  							# 두 번째 코루틴을 생성하고 실행
     loop.run_forever()  									# 루프를 계속 실행
 
