@@ -34,7 +34,8 @@ async def scan_lock_control(time_sleep=2000):
             if not device:
                 print("Lock control not found")
                 await uasyncio.sleep_ms(time_sleep)
-            break
+            else:
+                break
         except:
             await uasyncio.sleep_ms(time_sleep)
         
@@ -68,7 +69,3 @@ async def scan_lock_control(time_sleep=2000):
             except:
                 print("scan failed!!")
                 await uasyncio.sleep_ms(time_sleep)
-
-async def ble_aync_test():
-    while True:
-        print("Something scanned...")

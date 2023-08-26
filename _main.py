@@ -19,7 +19,7 @@ async def main_job():
     sid = ""
     wifi_scanned = ""
     gpsInfo = []
-    host = "http://34.64.74.23:1323"
+    host = "http://trailer-manager.com:1323"
     uri = "/api/v1/trm/log/gps"
 
     # WLAN 초기화
@@ -39,12 +39,6 @@ async def main_job():
     at = AT()
     ip = at.get_ip()
     print("IP Address: " + ip)
-
-    # WIFI 연결 - 미사용
-    #try:
-    #    ip = wifi.connect(wlan, ssid, password)
-    #except KeyboardInterrupt:
-    #    print("Wifi connection error...")
     
     while True or KeyboardInterrupt:   
         # GPS 데이터 가져오기
@@ -65,13 +59,13 @@ async def main_job():
             if (latitude == "" and longitude == ""):
                 data = data.format(sid=sid, lat=latitude, lon=longitude, speed=speed, wifiLoc=wifi_scanned, battery=100)
                 at.http_post(host, uri, data)
-                await uasyncio.sleep_ms(10000)
+                await uasyncio.sleep(10)
                 continue
             
             speed = my_gps.speed_string('kph')
             data = data.format(sid=sid, lat=latitude, lon=longitude, speed=speed, wifiLoc=wifi_scanned, battery=100)
             at.http_post(host, uri, data)
-            await uasyncio.sleep_ms(10000)
+            await uasyncio.sleep(10)
         except Exception as e:
             print(e)
             pass
@@ -80,8 +74,11 @@ async def main_job():
             print("err")
             pass
 
-async def main():
-    await uasyncio.gather(ble.scan_lock_control(), main_job())
+async def main():   
+    loop = uasyncio.get_event_loop()
+    loop.create_task(ble.scan_lock_control(2))   		# 첫 번째 코루틴을 생성하고 실행
+    loop.create_task(main_job())  							# 두 번째 코루틴을 생성하고 실행
+    loop.run_forever()  									# 루프를 계속 실행
 
 uasyncio.run(main())
 
