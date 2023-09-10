@@ -12,6 +12,13 @@ import uasyncio
 import socket
 import binascii
 
+def pwrkey_on():
+    pwrkey_pin = machine.Pin(8, machine.Pin.OUT)
+    pwrkey_pin.value(1)
+    uasyncio.sleep_ms(2000)
+    pwrkey_pin.value(1)
+    uasyncio.sleep_ms(2000)
+
 async def lte_scan():
     TIMEZONE = 9
     speed = "0"
@@ -25,6 +32,9 @@ async def lte_scan():
     # WLAN 초기화
     wlan = network.WLAN(network.STA_IF)
     wlan.active(True)
+
+    # LTE 모듈 초기화
+    pwrkey_on()
 
     # GPS 모듈 초기화 - 미사용
     gps_module = UART(1, baudrate=9600, tx=Pin(4), rx=Pin(5))
@@ -60,12 +70,12 @@ async def lte_scan():
             if (latitude == "" and longitude == ""):
                 data = data.format(sid=sid, lat=latitude, lon=longitude, speed=speed, wifiLoc=wifi_scanned, battery=100)
                 at.http_post(host, uri, data)
-                await uasyncio.sleep_ms(10000)
+                await uasyncio.sleep_ms(1800000)
                 continue
             speed = my_gps.speed_string('kph')
             data = data.format(sid=sid, lat=latitude, lon=longitude, speed=speed, wifiLoc=wifi_scanned, battery=100)
             at.http_post(host, uri, data)
-            await uasyncio.sleep_ms(10000)
+            await uasyncio.sleep_ms(1800000)
         except Exception as e:
             print(e)
             pass
@@ -74,19 +84,13 @@ async def lte_scan():
             print("err")
             pass
 
-async def test():
-    print("call test")
-    while True:
-        print("scan ble")
-        await uasyncio.sleep_ms(2000)
-
 async def main():
     #await uasyncio.gather(lte_scan(), test())
     loop = uasyncio.get_event_loop()
-    #loop.create_task(ble.scan_lock_control(2000))   		# 첫 번째 코루틴을 생성하고 실행
+    loop.create_task(ble.scan_lock_control(2000))   		# 첫 번째 코루틴을 생성하고 실행
     loop.create_task(lte_scan())  							# 두 번째 코루틴을 생성하고 실행
-    loop.create_task(test())
     loop.run_forever()
     loop.close()
 
 uasyncio.run(main())
+

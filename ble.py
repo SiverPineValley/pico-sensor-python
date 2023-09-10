@@ -29,43 +29,67 @@ async def connect_lock_control():
 
 async def scan_lock_control(time_sleep=2000):
     while True:
-        try:
-            device = await connect_lock_control()
-            if not device:
-                print("Lock control not found")
-                await uasyncio.sleep_ms(time_sleep)
-            else:
-                break
-        except:
-            await uasyncio.sleep_ms(time_sleep)
+        restart = False
+        while True:
+            try:
+                device = await connect_lock_control()
+                if not device:
+                    print("Lock control not found")
+                    await uasyncio.sleep_ms(time_sleep)
+                else:
+                    break
+            except Exception as e:
+                print(f"Error when device searching: {e}")
+                await uasyncio.sleep_ms(2000)
         
-    while True:
-        try:
-            print("Connecting to", device)
-            connection = await device.connect()
-            break
-        except uasyncio.TimeoutError:
-            print("Timeout during connection")
-            await uasyncio.sleep_ms(time_sleep)
-    
-    async with connection:
         while True:
             try:
-                lock_control = await connection.service(_ALERT_SVC_UUID)
-                lock_control_data = await lock_control.characteristic(_ALERT_CHA_UUID)
+                print("Connecting to", device)
+                connection = await device.connect()
                 break
-            except asyncio.TimeoutError:
-                print("Timeout discovering lock_control")
-                uasyncio.sleep_ms(time_sleep)
-            except:
-                print("Failed to connect BLE")
-                uasyncio.sleep_ms(time_sleep)
-    
-        while True:
-            try:
-                lock = await lock_control_data.read()
-                print("Lock code: {:.s}".format(lock))
+            except uasyncio.TimeoutError:
+                print("Timeout during connection")
                 await uasyncio.sleep_ms(time_sleep)
-            except:
-                print("scan failed!!")
+                restart = True
+                break
+            except Exception as e:
+                print(f"Error when device connecting: {e}")
                 await uasyncio.sleep_ms(time_sleep)
+                restart = True
+                break
+        
+        if restart:
+            continue
+        
+        async with connection:
+            while True:
+                try:
+                    lock_control = await connection.service(_ALERT_SVC_UUID)
+                    lock_control_data = await lock_control.characteristic(_ALERT_CHA_UUID)
+                    break
+                except asyncio.TimeoutError:
+                    print("Timeout discovering lock_control")
+                    uasyncio.sleep_ms(time_sleep)
+                    restart = True
+                    break
+                except Exception as e:
+                    print(f"Error when connecting to svc/char: {e}")
+                    uasyncio.sleep_ms(time_sleep)
+                    restart = True
+                    break
+        
+            if restart:
+                continue
+            
+            while True:
+                try:
+                    lock = await lock_control_data.read()
+                    print("Lock code: {:.s}".format(lock))
+                    await uasyncio.sleep_ms(time_sleep)
+                except:
+                    print("scan failed!!")
+                    await uasyncio.sleep_ms(time_sleep)
+                    restart = True
+                    break
+                
+

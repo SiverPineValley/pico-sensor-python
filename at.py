@@ -20,31 +20,33 @@ class AT():
         print("Setting to CAT-M mode:\n")
         self.send_at("AT+CFUN=0", "OK")
         self.send_at("AT+CMEE=2;+CNMP=38;+CMNB=1;+CFUN=1", "OK")
-        #self.send_at("AT+CNMP=38", "OK")
-        #self.send_at("AT+CMNB=1", "OK")
-        #self.send_at("AT+CFUN=1", "OK")
-        utime.sleep(5)
+        uasyncio.sleep(5)
 
     def check_network(self):
-        if self.send_at("AT+CPIN?", "READY") != 1:
-            print("------Please check whether the sim card has been inserted!------\n")
-        for i in range(1, 10):
-            if self.send_at("AT+CGATT?", "1"):
-                print('------SIM7080G is online------\r\n')
-                break
-            else:
-                print('------SIM7080G is offline, please wait...------\r\n')
-                utime.sleep(5)
+        while True:
+            if self.send_at("AT+CPIN?", "READY") != 1:
+                print("------Please check whether the sim card has been inserted!------\n")
+            for i in range(1, 10):
+                if self.send_at("AT+CGATT?", "1"):
+                    print('------SIM7080G is online------\r\n')
+                    break
+                else:
+                    print('------SIM7080G is offline, please wait...------\r\n')
+                    uasyncio.sleep(5)
+                    continue
+            if self.send_at("AT+CSQ", "OK") == 0:
                 continue
-        self.send_at("AT+CSQ", "OK")
-        self.send_at("AT+CPSI?", "OK")
-        self.send_at("AT+COPS?", "OK")
-        get_resp_info = str(self.send_at_wait_resp('AT+CGNAPN', 'OK'))
-        getapn1 = get_resp_info[get_resp_info.find('\"')+1:get_resp_info.rfind('\"')]
-        self.send_at("AT+CNCFG=0,1,\""+getapn1+"\"", "OK")
-        self.send_at('AT+CNACT=0,1', 'OK')
-        ip_resp_info = str(self.send_at_wait_resp('AT+CNACT?', 'OK'))
-        ip = ip_resp_info[get_resp_info.find('\"')+2:get_resp_info.rfind('\"')].replace("\\r", "").replace("\"", "").replace("\\", "")
+            self.send_at("AT+CPSI?", "OK")
+            self.send_at("AT+COPS?", "OK")
+            get_resp_info = str(self.send_at_wait_resp('AT+CGNAPN', 'OK'))
+            getapn1 = get_resp_info[get_resp_info.find('\"')+1:get_resp_info.rfind('\"')]
+            self.send_at("AT+CNCFG=0,1,\""+getapn1+"\"", "OK")
+            self.send_at('AT+CNACT=0,1', 'OK')
+            ip_resp_info = str(self.send_at_wait_resp('AT+CNACT?', 'OK'))
+            ip = ip_resp_info[get_resp_info.find('\"')+2:get_resp_info.rfind('\"')].replace("\\r", "").replace("\"", "").replace("\\", "")
+            if ip == "" or "0.0.0.0" in ip:
+                continue
+            break
         return ip
 
     # Set HTTP body and head length
@@ -186,13 +188,13 @@ class AT():
     async def getGpsInfo(self):
         print('Start GPS session...')
         self.send_at('AT+CGNSPWR=1','OK')
-        utime.sleep(2)
+        uasyncio.sleep(2)
         rec_buff = b''
         self.Pico_SIM7080G.write( 'AT+CGNSINF\r\n'.encode() )
         rec_buff = self.waitResp_info()
         gpsInfo = str(rec_buff.decode())
         self.send_at('AT+CGNSPWR=0','OK')
-        utime.sleep(2)
+        uasyncio.sleep(2)
         return gpsInfo
     
     def turnOffGps(self):
