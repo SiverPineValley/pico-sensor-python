@@ -85,7 +85,6 @@ async def lte_scan():
             pass
 
 async def main():
-    #await uasyncio.gather(lte_scan(), test())
     loop = uasyncio.get_event_loop()
     loop.create_task(ble.scan_lock_control(2000))   		# 첫 번째 코루틴을 생성하고 실행
     loop.create_task(lte_scan())  							# 두 번째 코루틴을 생성하고 실행
