@@ -1,6 +1,7 @@
 from machine import Pin, UART
 from micropyGPS import MicropyGPS
 from utility import Utility
+from max17043 import max17043
 from at import AT
 import wifi
 import network
@@ -28,6 +29,10 @@ async def lte_scan():
     gpsInfo = []
     host = "http://trailer-manager.com:1323"
     uri = "/api/v1/trm/log/gps"
+
+    # MAX17043 초기화 (배터리 잔량 측정 모듈)
+    m = max17043()
+    print(m.__str__())
 
     # WLAN 초기화
     wlan = network.WLAN(network.STA_IF)
@@ -66,14 +71,15 @@ async def lte_scan():
 
 
         try:
+            battery = m.getSoc()
             data = 'sid={sid}&lat={lat}&lon={lon}&speed={speed}&wifiLoc={wifiLoc}&battery={battery}'
             if (latitude == "" and longitude == ""):
-                data = data.format(sid=sid, lat=latitude, lon=longitude, speed=speed, wifiLoc=wifi_scanned, battery=100)
+                data = data.format(sid=sid, lat=latitude, lon=longitude, speed=speed, wifiLoc=wifi_scanned, battery=battery)
                 at.http_post(host, uri, data)
                 await uasyncio.sleep_ms(1800000)
                 continue
             speed = my_gps.speed_string('kph')
-            data = data.format(sid=sid, lat=latitude, lon=longitude, speed=speed, wifiLoc=wifi_scanned, battery=100)
+            data = data.format(sid=sid, lat=latitude, lon=longitude, speed=speed, wifiLoc=wifi_scanned, battery=battery)
             at.http_post(host, uri, data)
             await uasyncio.sleep_ms(1800000)
         except Exception as e:
@@ -92,4 +98,3 @@ async def main():
     loop.close()
 
 uasyncio.run(main())
-
